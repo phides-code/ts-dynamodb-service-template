@@ -1,14 +1,14 @@
-# go-dynamodb-service-template
+# ts-dynamodb-service-template
 
-A Go project template providing CRUD services for a DynamoDB table, using AWS Lambda and API Gateway, deployed with AWS SAM and GitHub Actions.
+A TypeScript project template providing CRUD services for a DynamoDB table, using AWS Lambda and API Gateway, deployed with AWS SAM and GitHub Actions.
 
 ### Customize
 
 -   Find and replace `Appname` with the name of the app (upper and lowercase A)
 -   Find and replace `Banana`/`Bananas` with the table name (upper and lowercase B)
 -   Find and replace `ca-central-1` with the AWS region
--   Update fields in `database.go`
--   Update values in `constants.go`
+-   Update fields in `database.ts`
+-   Update values in `constants.ts`
 
 ### Deploy manually
 
