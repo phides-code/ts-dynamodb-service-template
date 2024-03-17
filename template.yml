@@ -2,72 +2,72 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Resources:
-  AppnameBananasService:
+  AppnameApplesService:
     Type: AWS::Serverless::Api
     Description: "Serverless API for CRUD operations"
     Properties:
-      Name: "appname-bananas-service"
+      Name: "appname-apples-service"
       StageName: Prod
       Cors:
         AllowMethods: "'OPTIONS, POST, GET, PUT, DELETE'"
         AllowHeaders: "'Content-Type'"
         AllowOrigin: "'http://localhost:3000'" # replace with frontend app URL
 
-  AppnameBananasFunction:
+  AppnameApplesFunction:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 10
-      Handler: bootstrap
-      Runtime: provided.al2023
+      Handler: dist/index.lambdaHandler
+      Runtime: nodejs20.x
       Policies:
         - AWSLambdaExecute
         - SecretsManagerReadWrite
         - DynamoDBCrudPolicy:
-            TableName: !Ref AppnameBananasTable
+            TableName: !Ref AppnameApplesTable
       Events:
-        BananasOptions:
+        ApplesOptions:
           Type: Api
           Properties:
-            Path: /bananas
+            Path: /apples
             Method: OPTIONS
-            RestApiId: !Ref AppnameBananasService
-        GetBanana:
+            RestApiId: !Ref AppnameApplesService
+        GetApple:
           Type: Api
           Properties:
-            Path: /bananas/{id}
+            Path: /apples/{id}
             Method: GET
-            RestApiId: !Ref AppnameBananasService
-        GetBananas:
+            RestApiId: !Ref AppnameApplesService
+        GetApples:
           Type: Api
           Properties:
-            Path: /bananas
+            Path: /apples
             Method: GET
-            RestApiId: !Ref AppnameBananasService
-        PutBanana:
+            RestApiId: !Ref AppnameApplesService
+        PutApple:
           Type: Api
           Properties:
-            Path: /bananas
+            Path: /apples
             Method: POST
-            RestApiId: !Ref AppnameBananasService
-        DeleteBanana:
+            RestApiId: !Ref AppnameApplesService
+        DeleteApple:
           Type: Api
           Properties:
-            Path: /bananas/{id}
+            Path: /apples/{id}
             Method: DELETE
-            RestApiId: !Ref AppnameBananasService
-        UpdateBanana:
+            RestApiId: !Ref AppnameApplesService
+        UpdateApple:
           Type: Api
           Properties:
-            Path: /bananas/{id}
+            Path: /apples/{id}
             Method: PUT
-            RestApiId: !Ref AppnameBananasService
+            RestApiId: !Ref AppnameApplesService
     Metadata:
       BuildMethod: makefile
 
-  AppnameBananasTable:
+  AppnameApplesTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: AppnameBananas
+      TableName: AppnameApples
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S

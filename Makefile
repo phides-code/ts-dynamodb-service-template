@@ -2,8 +2,10 @@
 build:
 	sam build
 
-build-AppnameBananasFunction:
-	GOOS=linux CGO_ENABLED=0 go build -tags lambda.norpc -o $(ARTIFACTS_DIR)/bootstrap .
+build-AppnameApplesFunction:
+	npm install
+	tsc
+	cp -r dist/* $(ARTIFACTS_DIR)/
 
 .PHONY: init
 init: build
