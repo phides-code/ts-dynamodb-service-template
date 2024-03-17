@@ -12,6 +12,6 @@ export interface Entity {
 }
 
 export interface ResponseStructure {
-    data: Entity[] | null;
+    data: Entity[] | Entity | string | null;
     errorMessage: string | null;
 }
