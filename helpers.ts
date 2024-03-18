@@ -1,6 +1,7 @@
 import { APIGatewayProxyCallback } from 'aws-lambda';
 import * as http from 'http';
 import { ResponseStructure } from './types';
+import { headers } from './constants';
 
 export const clientError = (
     httpStatus: number,
@@ -18,6 +19,7 @@ export const clientError = (
     return callback(null, {
         statusCode: httpStatus,
         body: JSON.stringify(response),
+        headers,
     });
 };
 
@@ -33,5 +35,6 @@ export const serverError = (callback: APIGatewayProxyCallback) => {
     return callback(null, {
         statusCode: 500,
         body: JSON.stringify(response),
+        headers,
     });
 };

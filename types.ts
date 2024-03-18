@@ -11,7 +11,11 @@ export interface Entity {
     description: string;
 }
 
+export interface NewOrUpdatedEntity {
+    description: string;
+}
+
 export interface ResponseStructure {
-    data: Entity[] | Entity | string | null;
+    data: Entity[] | Entity | null;
     errorMessage: string | null;
 }

@@ -1,6 +1,12 @@
-import { getEntity, listEntities } from './database';
+import { ApiPath, headers } from './constants';
+import { getEntity, insertEntity, listEntities } from './database';
 import { clientError } from './helpers';
-import { Entity, LambdaHandlerParams, ResponseStructure } from './types';
+import {
+    Entity,
+    LambdaHandlerParams,
+    NewOrUpdatedEntity,
+    ResponseStructure,
+} from './types';
 
 export const router = async (handlerParams: LambdaHandlerParams) => {
     const { event } = handlerParams;
@@ -8,8 +14,8 @@ export const router = async (handlerParams: LambdaHandlerParams) => {
     switch (event.httpMethod) {
         case 'GET':
             return processGet(handlerParams);
-        // case "POST":
-        //     return processPost(handlerParams);
+        case 'POST':
+            return processPost(handlerParams);
         // case "DELETE":
         //     return processDelete(handlerParams);
         // case "PUT":
@@ -22,6 +28,15 @@ export const router = async (handlerParams: LambdaHandlerParams) => {
 
             return clientError(405, callback);
     }
+};
+
+const validateEntity = (newEntity: any): newEntity is NewOrUpdatedEntity => {
+    return (
+        typeof newEntity === 'object' &&
+        newEntity !== null &&
+        'description' in newEntity &&
+        typeof newEntity.description === 'string'
+    );
 };
 
 const processGet = async (handlerParams: LambdaHandlerParams) => {
@@ -46,14 +61,12 @@ const processGetAll = async (handlerParams: LambdaHandlerParams) => {
     return callback(null, {
         statusCode: 200,
         body: JSON.stringify(response),
+        headers,
     });
 };
 
 const processGetEntityById = async (handlerParams: LambdaHandlerParams) => {
     const { callback, event } = handlerParams;
-    // const id: string = event.pathParameters?.id as string;
-
-    // console.log('got id: ', id);
 
     const entity: Entity = (await getEntity(handlerParams)) as Entity;
 
@@ -65,5 +78,33 @@ const processGetEntityById = async (handlerParams: LambdaHandlerParams) => {
     return callback(null, {
         statusCode: 200,
         body: JSON.stringify(response),
+        headers,
+    });
+};
+
+const processPost = async (handlerParams: LambdaHandlerParams) => {
+    const { callback, event } = handlerParams;
+
+    const newEntity = JSON.parse(event.body as string);
+
+    if (!validateEntity(newEntity)) {
+        return clientError(400, callback);
+    }
+
+    const entity: Entity = (await insertEntity(handlerParams)) as Entity;
+
+    const response: ResponseStructure = {
+        data: entity,
+        errorMessage: null,
+    };
+
+    const locationHeader = {
+        Location: `/${ApiPath}/${entity.id}`,
+    };
+
+    return callback(null, {
+        statusCode: 201,
+        body: JSON.stringify(response),
+        headers: { ...headers, ...locationHeader },
     });
 };
