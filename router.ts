@@ -1,5 +1,10 @@
 import { ApiPath, headers } from './constants';
-import { getEntity, insertEntity, listEntities } from './database';
+import {
+    deleteEntity,
+    getEntity,
+    insertEntity,
+    listEntities,
+} from './database';
 import { clientError } from './helpers';
 import {
     Entity,
@@ -16,8 +21,8 @@ export const router = async (handlerParams: LambdaHandlerParams) => {
             return processGet(handlerParams);
         case 'POST':
             return processPost(handlerParams);
-        // case "DELETE":
-        //     return processDelete(handlerParams);
+        case 'DELETE':
+            return processDelete(handlerParams);
         // case "PUT":
         //     return processPut(handlerParams);
         // case "OPTIONS":
@@ -66,7 +71,7 @@ const processGetAll = async (handlerParams: LambdaHandlerParams) => {
 };
 
 const processGetEntityById = async (handlerParams: LambdaHandlerParams) => {
-    const { callback, event } = handlerParams;
+    const { callback } = handlerParams;
 
     const entity: Entity = (await getEntity(handlerParams)) as Entity;
 
@@ -106,5 +111,22 @@ const processPost = async (handlerParams: LambdaHandlerParams) => {
         statusCode: 201,
         body: JSON.stringify(response),
         headers: { ...headers, ...locationHeader },
+    });
+};
+
+const processDelete = async (handlerParams: LambdaHandlerParams) => {
+    const { callback } = handlerParams;
+
+    const entity: Entity = (await deleteEntity(handlerParams)) as Entity;
+
+    const response: ResponseStructure = {
+        data: entity,
+        errorMessage: null,
+    };
+
+    return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify(response),
+        headers,
     });
 };
