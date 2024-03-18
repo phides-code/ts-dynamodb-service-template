@@ -1,3 +1,4 @@
+import { APIGatewayProxyCallback } from 'aws-lambda';
 import { ApiPath, headers } from './constants';
 import {
     deleteEntity,
@@ -15,7 +16,7 @@ import {
 } from './types';
 
 export const router = async (handlerParams: LambdaHandlerParams) => {
-    const { event } = handlerParams;
+    const { event, callback } = handlerParams;
 
     switch (event.httpMethod) {
         case 'GET':
@@ -26,12 +27,10 @@ export const router = async (handlerParams: LambdaHandlerParams) => {
             return processDelete(handlerParams);
         case 'PUT':
             return processPut(handlerParams);
-        // case "OPTIONS":
-        //     return processOptions()
+        case 'OPTIONS':
+            return processOptions(callback);
         default:
             // method not allowed
-            const { callback } = handlerParams;
-
             return clientError(405, callback);
     }
 };
@@ -170,5 +169,18 @@ const processPut = async (handlerParams: LambdaHandlerParams) => {
         statusCode: 200,
         body: JSON.stringify(response),
         headers: { ...headers, ...locationHeader },
+    });
+};
+
+const processOptions = async (callback: APIGatewayProxyCallback) => {
+    const corsHeaders = {
+        'Access-Control-Allow-Methods': 'OPTIONS, POST, GET, PUT, DELETE',
+        'Access-Control-Max-Age': '3600',
+    };
+
+    return callback(null, {
+        statusCode: 200,
+        body: '',
+        headers: { ...headers, ...corsHeaders },
     });
 };
