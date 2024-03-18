@@ -9,10 +9,12 @@ export interface LambdaHandlerParams {
 export interface Entity {
     id: string;
     description: string;
+    quantity: number;
 }
 
 export interface NewOrUpdatedEntity {
     description: string;
+    quantity: number;
 }
 
 export interface ResponseStructure {

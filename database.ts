@@ -5,6 +5,7 @@ import {
     GetCommand,
     PutCommand,
     ScanCommand,
+    UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { Entity, LambdaHandlerParams, NewOrUpdatedEntity } from './types';
 import { clientError, serverError } from './helpers';
@@ -17,7 +18,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 export const listEntities = async (handlerParams: LambdaHandlerParams) => {
     try {
         const command = new ScanCommand({
-            ProjectionExpression: 'id, description',
+            ProjectionExpression: 'id, description, quantity',
             TableName: TableName,
         });
 
@@ -112,6 +113,49 @@ export const deleteEntity = async (handlerParams: LambdaHandlerParams) => {
         return response.Attributes as Entity;
     } catch (err) {
         console.log('deleteEntity caught error: ', err);
+
+        const { callback } = handlerParams;
+        return serverError(callback);
+    }
+};
+
+export const updateEntity = async (handlerParams: LambdaHandlerParams) => {
+    try {
+        const { event } = handlerParams;
+        const id: string = event.pathParameters?.id as string;
+        const updatedEntity: NewOrUpdatedEntity = JSON.parse(
+            event.body as string
+        );
+        const { description, quantity } = updatedEntity;
+
+        const command = new UpdateCommand({
+            TableName: TableName,
+            Key: {
+                id,
+            },
+            UpdateExpression:
+                'SET #description = :description, #quantity = :quantity',
+
+            ExpressionAttributeNames: {
+                '#description': 'description',
+                '#quantity': 'quantity',
+            },
+            ExpressionAttributeValues: {
+                ':description': description,
+                ':quantity': quantity,
+            },
+            ReturnValues: 'ALL_NEW',
+        });
+
+        const response = await docClient.send(command);
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('failed to update entity');
+        }
+
+        return response.Attributes as Entity;
+    } catch (err) {
+        console.log('updateEntity caught error: ', err);
 
         const { callback } = handlerParams;
         return serverError(callback);
