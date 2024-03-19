@@ -5,10 +5,11 @@ A TypeScript project template providing CRUD services for a DynamoDB table, usin
 ### Customize
 
 -   Find and replace `Appname` with the name of the app (upper and lowercase A)
--   Find and replace `Apple`/`Apples` with the table name (upper and lowercase B)
+-   Find and replace `Apple`/`Apples` with the table name (upper and lowercase A)
 -   Find and replace `ca-central-1` with the AWS region
--   Update fields in `database.ts`
 -   Update values in `constants.ts`
+-   Update interface in `types.ts`
+-   Update fields in `helpers.ts`
 
 ### Deploy manually
 
