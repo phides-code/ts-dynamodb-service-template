@@ -5,12 +5,11 @@ import { LambdaHandlerParams } from './types';
 
 export const lambdaHandler = (
     event: APIGatewayEvent,
-    context: Context,
+    _context: Context,
     callback: APIGatewayProxyCallback
 ): void => {
     const handlerParams: LambdaHandlerParams = {
         callback,
-        context,
         event,
     };
 

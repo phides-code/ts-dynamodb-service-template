@@ -8,156 +8,127 @@ import {
     UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { Entity, LambdaHandlerParams, NewOrUpdatedEntity } from './types';
-import { clientError, serverError } from './helpers';
-import { TableName } from './constants';
+import {
+    buildEntityFields,
+    buildExpressionAttributeNames,
+    buildExpressionAttributeValues,
+    buildUpdateExpression,
+} from './helpers';
+import { InvalidItemError, TableName } from './constants';
 import { randomUUID } from 'crypto';
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const listEntities = async (handlerParams: LambdaHandlerParams) => {
-    try {
-        const command = new ScanCommand({
-            ProjectionExpression: 'id, description, quantity',
-            TableName: TableName,
-        });
+export const listEntities = async () => {
+    const entityFields = buildEntityFields();
+    const command = new ScanCommand({
+        ProjectionExpression: entityFields,
+        TableName: TableName,
+    });
 
-        const response = await docClient.send(command);
+    const response = await docClient.send(command);
 
-        return response.Items as Entity[];
-    } catch (err) {
-        console.log('listEntities caught error: ', err);
-
-        const { callback } = handlerParams;
-        return serverError(callback);
-    }
+    return response.Items as Entity[];
 };
 
 export const getEntity = async (handlerParams: LambdaHandlerParams) => {
-    try {
-        const { event } = handlerParams;
-        const id: string = event.pathParameters?.id as string;
+    const { event } = handlerParams;
+    const id: string = event.pathParameters?.id as string;
 
-        const command = new GetCommand({
-            TableName: TableName,
-            Key: {
-                id: id,
-            },
-        });
+    const command = new GetCommand({
+        TableName: TableName,
+        Key: {
+            id: id,
+        },
+    });
 
-        const response = await docClient.send(command);
+    const response = await docClient.send(command);
 
-        if (!response.Item) {
-            throw new Error('invalid item id');
-        }
-
-        return response.Item as Entity;
-    } catch (err) {
-        console.log('getEntity caught error: ', err);
-
-        const { callback } = handlerParams;
-        return clientError(400, callback);
+    if (!response.Item) {
+        throw new Error(InvalidItemError);
     }
+
+    return response.Item as Entity;
 };
 
 export const insertEntity = async (handlerParams: LambdaHandlerParams) => {
-    try {
-        const { event } = handlerParams;
+    const { event } = handlerParams;
 
-        const newEntity: NewOrUpdatedEntity = JSON.parse(event.body as string);
+    const newEntity: NewOrUpdatedEntity = JSON.parse(event.body as string);
 
-        const newEntityWithId: Entity = {
-            id: randomUUID(),
-            ...newEntity,
-        };
+    const newEntityWithId: Entity = {
+        id: randomUUID(),
+        ...newEntity,
+    };
 
-        const command = new PutCommand({
-            TableName: TableName,
-            Item: newEntityWithId,
-        });
+    const command = new PutCommand({
+        TableName: TableName,
+        Item: newEntityWithId,
+    });
 
-        const response = await docClient.send(command);
+    await docClient.send(command);
 
-        if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error('failed to insert new entity');
-        }
-
-        return newEntityWithId;
-    } catch (err) {
-        console.log('insertEntity caught error: ', err);
-
-        const { callback } = handlerParams;
-        return serverError(callback);
-    }
+    return newEntityWithId;
 };
 
 export const deleteEntity = async (handlerParams: LambdaHandlerParams) => {
-    try {
-        const { event } = handlerParams;
-        const id: string = event.pathParameters?.id as string;
+    const { event } = handlerParams;
+    const id: string = event.pathParameters?.id as string;
 
-        const command = new DeleteCommand({
-            TableName: TableName,
-            Key: {
-                id,
-            },
-            ReturnValues: 'ALL_OLD',
-        });
+    const command = new DeleteCommand({
+        TableName: TableName,
+        Key: {
+            id,
+        },
+        ReturnValues: 'ALL_OLD',
+    });
 
-        const response = await docClient.send(command);
+    const response = await docClient.send(command);
 
-        if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error('failed to delete entity');
-        }
-
-        return response.Attributes as Entity;
-    } catch (err) {
-        console.log('deleteEntity caught error: ', err);
-
-        const { callback } = handlerParams;
-        return serverError(callback);
+    if (!response.Attributes) {
+        throw new Error(InvalidItemError);
     }
+
+    return response.Attributes as Entity;
 };
 
 export const updateEntity = async (handlerParams: LambdaHandlerParams) => {
-    try {
-        const { event } = handlerParams;
-        const id: string = event.pathParameters?.id as string;
-        const updatedEntity: NewOrUpdatedEntity = JSON.parse(
-            event.body as string
-        );
-        const { description, quantity } = updatedEntity;
+    const { event } = handlerParams;
+    const id: string = event.pathParameters?.id as string;
 
-        const command = new UpdateCommand({
-            TableName: TableName,
-            Key: {
-                id,
-            },
-            UpdateExpression:
-                'SET #description = :description, #quantity = :quantity',
+    const getCommand = new GetCommand({
+        TableName: TableName,
+        Key: {
+            id: id,
+        },
+    });
 
-            ExpressionAttributeNames: {
-                '#description': 'description',
-                '#quantity': 'quantity',
-            },
-            ExpressionAttributeValues: {
-                ':description': description,
-                ':quantity': quantity,
-            },
-            ReturnValues: 'ALL_NEW',
-        });
+    const getResponse = await docClient.send(getCommand);
 
-        const response = await docClient.send(command);
-
-        if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error('failed to update entity');
-        }
-
-        return response.Attributes as Entity;
-    } catch (err) {
-        console.log('updateEntity caught error: ', err);
-
-        const { callback } = handlerParams;
-        return serverError(callback);
+    if (!getResponse.Item) {
+        throw new Error(InvalidItemError);
     }
+
+    const updatedEntity: NewOrUpdatedEntity = JSON.parse(event.body as string);
+
+    const updateExpression = buildUpdateExpression();
+    const expressionAttributeNames = buildExpressionAttributeNames();
+    const expressionAttributeValues =
+        buildExpressionAttributeValues(updatedEntity);
+
+    const updateCommand = new UpdateCommand({
+        TableName: TableName,
+        Key: {
+            id,
+        },
+        UpdateExpression: updateExpression,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ReturnValues: 'ALL_NEW',
+    });
+
+    const response = await docClient.send(updateCommand);
+
+    return response.Attributes as Entity;
 };

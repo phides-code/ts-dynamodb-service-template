@@ -1,20 +1,18 @@
-import { APIGatewayEvent, APIGatewayProxyCallback, Context } from 'aws-lambda';
+import { APIGatewayEvent, APIGatewayProxyCallback } from 'aws-lambda';
+
+export interface NewOrUpdatedEntity {
+    // update with required entity fields
+    description: string;
+    quantity: number;
+}
+
+export interface Entity extends NewOrUpdatedEntity {
+    id: string;
+}
 
 export interface LambdaHandlerParams {
     event: APIGatewayEvent;
-    context: Context;
     callback: APIGatewayProxyCallback;
-}
-
-export interface Entity {
-    id: string;
-    description: string;
-    quantity: number;
-}
-
-export interface NewOrUpdatedEntity {
-    description: string;
-    quantity: number;
 }
 
 export interface ResponseStructure {
