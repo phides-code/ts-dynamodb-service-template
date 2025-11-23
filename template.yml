@@ -8,10 +8,21 @@ Resources:
     Properties:
       Name: "appname-apples-service"
       StageName: Prod
+      Auth:
+        DefaultAuthorizer: AWS_IAM
+        InvokeRole: NONE
       Cors:
         AllowMethods: "'OPTIONS, POST, GET, PUT, DELETE'"
-        AllowHeaders: "'Content-Type'"
+        AllowHeaders: "'Content-Type, x-amz-content-sha256, x-amz-date, X-Amz-Security-Token, Authorization'"
         AllowOrigin: "'http://localhost:3000'" # replace with frontend app URL
+        AllowCredentials: true
+      # Logging settings
+      MethodSettings:
+        - LoggingLevel: INFO
+          ResourcePath: "/*"
+          HttpMethod: "*"
+          MetricsEnabled: true
+          DataTraceEnabled: true
 
   AppnameApplesFunction:
     Type: AWS::Serverless::Function
@@ -19,9 +30,9 @@ Resources:
       Timeout: 10
       Handler: dist/index.lambdaHandler
       Runtime: nodejs22.x
+      MemorySize: 512
       Policies:
         - AWSLambdaExecute
-        - SecretsManagerReadWrite
         - DynamoDBCrudPolicy:
             TableName: !Ref AppnameApplesTable
       Events:
@@ -31,6 +42,16 @@ Resources:
             Path: /apples
             Method: OPTIONS
             RestApiId: !Ref AppnameApplesService
+            Auth:
+              Authorizer: NONE
+        ApplesOptionsId:
+          Type: Api
+          Properties:
+            Path: /apples/{id}
+            Method: OPTIONS
+            RestApiId: !Ref AppnameApplesService
+            Auth:
+              Authorizer: NONE
         GetApple:
           Type: Api
           Properties:
